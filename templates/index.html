@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exoplanet Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0a0a23;
+            color: #f5f6fa;
+        }
+        .container {
+            background-color: #1e1e3e;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #4c6ef5;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #a5b4fc;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #4c6ef5;
+            border-radius: 5px;
+            background-color: #2d3561;
+            color: #f5f6fa;
+            font-size: 14px;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+        }
+        .submit-btn {
+            background-color: #4c6ef5;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #364fc7;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #2d3561;
+            border-left: 4px solid #4c6ef5;
+        }
+        .result h3 {
+            color: #4c6ef5;
+            margin-top: 0;
+        }
+        .prediction {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .confirmed-planet { color: #51cf66; }
+        .planet-candidate { color: #ffd43b; }
+        .false-positive { color: #ff6b6b; }
+        .confidence {
+            font-size: 14px;
+            color: #a5b4fc;
+        }
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #a5b4fc;
+            line-height: 1.6;
+        }
+        .example-btn {
+            background-color: #7c3aed;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .example-btn:hover {
+            background-color: #6d28d9;
+        }
+        .examples {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌌 Exoplanet Classifier</h1>
+        <div class="description">
+            <p>Enter the astronomical parameters below to classify whether the transit signal represents a confirmed planet, planet candidate, or false positive. This AI model is trained on NASA's TESS mission data.</p>
+        </div>
+        
+        <form id="classificationForm">
+            <div class="form-group">
+                <label for="orbital_period">Orbital Period (days):</label>
+                <input type="number" id="orbital_period" name="orbital_period" step="any" required>
+                <div class="examples">
+                    <button type="button" class="example-btn" onclick="fillExample('earth')">Earth-like</button>
+                    <button type="button" class="example-btn" onclick="fillExample('hot_jupiter')">Hot Jupiter</button>
+                    <button type="button" class="example-btn" onclick="fillExample('false_positive')">False Positive</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="transit_duration">Transit Duration (hours):</label>
+                <input type="number" id="transit_duration" name="transit_duration" step="any" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="transit_depth">Transit Depth (ppm):</label>
+                <input type="number" id="transit_depth" name="transit_depth" step="any" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="planet_radius">Planet Radius (Earth radii):</label>
+                <input type="number" id="planet_radius" name="planet_radius" step="any" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="star_temp">Star Effective Temperature (K):</label>
+                <input type="number" id="star_temp" name="star_temp" step="any" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="stellar_log">Stellar log g:</label>
+                <input type="number" id="stellar_log" name="stellar_log" step="any" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="star_radius">Star Radius (Solar radii):</label>
+                <input type="number" id="star_radius" name="star_radius" step="any" required>
+            </div>
+            
+            <button type="submit" class="submit-btn">🚀 Classify Exoplanet</button>
+        </form>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>Classification Result:</h3>
+            <div id="prediction-text" class="prediction"></div>
+            <div id="confidence-text" class="confidence"></div>
+        </div>
+    </div>
+
+    <script>
+        function fillExample(type) {
+            const examples = {
+                'earth': {
+                    orbital_period: 365.25,
+                    transit_duration: 13.0,
+                    transit_depth: 84,
+                    planet_radius: 1.0,
+                    star_temp: 5778,
+                    stellar_log: 4.44,
+                    star_radius: 1.0
+                },
+                'hot_jupiter': {
+                    orbital_period: 3.2,
+                    transit_duration: 2.5,
+                    transit_depth: 12000,
+                    planet_radius: 11.2,
+                    star_temp: 6200,
+                    stellar_log: 4.2,
+                    star_radius: 1.1
+                },
+                'false_positive': {
+                    orbital_period: 1.5,
+                    transit_duration: 8.5,
+                    transit_depth: 25000,
+                    planet_radius: 15.0,
+                    star_temp: 4500,
+                    stellar_log: 3.8,
+                    star_radius: 0.8
+                }
+            };
+            
+            const example = examples[type];
+            for (const [key, value] of Object.entries(example)) {
+                document.getElementById(key).value = value;
+            }
+        }
+
+        document.getElementById('classificationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert to proper field names for the model
+            const modelData = {
+                'Orbital Period': parseFloat(data.orbital_period),
+                'Transit Duration': parseFloat(data.transit_duration),
+                'Transit Depth': parseFloat(data.transit_depth),
+                'Planet Radius': parseFloat(data.planet_radius),
+                'Star Eff. Temp': parseFloat(data.star_temp),
+                'Stellar log': parseFloat(data.stellar_log),
+                'Star Radius': parseFloat(data.star_radius)
+            };
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(modelData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                    return;
+                }
+                
+                // Display result
+                const resultDiv = document.getElementById('result');
+                const predictionText = document.getElementById('prediction-text');
+                const confidenceText = document.getElementById('confidence-text');
+                
+                predictionText.textContent = result.prediction;
+                predictionText.className = 'prediction ' + result.prediction.toLowerCase().replace(' ', '-');
+                
+                confidenceText.innerHTML = `Confidence: <strong>${(result.confidence * 100).toFixed(1)}%</strong><br>`;
+                confidenceText.innerHTML += 'All probabilities:<br>';
+                for (const [cls, prob] of Object.entries(result.probabilities)) {
+                    confidenceText.innerHTML += `• ${cls}: ${(prob * 100).toFixed(1)}%<br>`;
+                }
+                
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                alert('Error connecting to server: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
